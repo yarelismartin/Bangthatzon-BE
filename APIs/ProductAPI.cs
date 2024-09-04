@@ -57,6 +57,7 @@ namespace Bangthatzon.APIs
             {
                 Product product = db.Products
                 .Include(p => p.Seller)
+                .Include(p => p.Category)
                 .SingleOrDefault(p => p.Id == productId);
                 if (product == null)
                 {
@@ -83,7 +84,7 @@ namespace Bangthatzon.APIs
             //when a product gets added to the cart:
             //check if there is an open order and if not then create an open order
             //a patch should occur on the product to update the quantity available
-            app.MapGet("/api/products/{productId}/addProduct", (BangthatzonDbContext db, int productId, int userId) =>
+            app.MapPost("/api/products/{productId}/addProduct", (BangthatzonDbContext db, int productId, [FromBody] int userId) =>
             {
                 // Fetch the order along with its products
                 var order = db.Orders
@@ -116,6 +117,14 @@ namespace Bangthatzon.APIs
                     db.SaveChanges();
                 }
 
+                // Check if the product is already in the order
+                bool productAlreadyInOrder = order.Products.Any(p => p.Id == productId);
+
+                if (productAlreadyInOrder)
+                {
+                    return Results.Ok(new { message = "Item is already in your cart" });
+                }
+
                 // Add the product to the order's products collection
                 order.Products.Add(productToAdd);
 
@@ -126,12 +135,12 @@ namespace Bangthatzon.APIs
                 db.SaveChanges();
 
                 // Return a success response
-                return Results.Ok();
+                return Results.Ok(new { message = "Product added to cart successfully" });
             });
 
 
             //remove product from cart and update the quantity available
-            app.MapDelete("/api/orders/{orderId}/removeProduct", (BangthatzonDbContext db, int orderId, int productId) =>
+            app.MapDelete("/api/orders/{orderId}/removeProduct", (BangthatzonDbContext db, int orderId, [FromBody] int productId) =>
             {
                 var order = db.Orders
                 .Include(o => o.Products)

@@ -11,10 +11,10 @@ namespace Bangthatzon.APIs
         public static void Map(WebApplication app) 
         {
             //Get user by id
-            app.MapGet("/api/users/{userId}", (BangthatzonDbContext db, int userId) =>
+            app.MapGet("/api/users/{uid}", (BangthatzonDbContext db, string uid) =>
             {
                 User user = db.Users
-                .SingleOrDefault(u => u.Id == userId);
+                .SingleOrDefault(u => u.Uid == uid);
                 if (user == null)
                 {
                     return Results.NotFound("There are no users matching.");
@@ -23,7 +23,7 @@ namespace Bangthatzon.APIs
             });
 
             //post user // creating an account 
-            app.MapPost("/api/users/register", (BangthatzonDbContext db, User newUser) =>
+            app.MapPost("api/register", (BangthatzonDbContext db, User newUser) =>
             {
                 db.Users.Add(newUser);
                 db.SaveChanges();
@@ -32,11 +32,19 @@ namespace Bangthatzon.APIs
             });
 
             // Get all users and compare the logged in users uid to the uid stores in database. return true if there's a match.
-            app.MapGet("/api/auth/check-uid", (BangthatzonDbContext db, string uid) =>
+            app.MapGet("/checkuser/{uid}", (BangthatzonDbContext db, string uid) =>
             {
-                var checkUid = db.Users
-                .Any(u => u.Uid == uid);
-                return Results.Json(checkUid);
+
+                var user = db.Users.Where(u => u.Uid == uid).ToList();
+                if (user == null)
+                {
+                    return Results.NotFound("There are no users with this uid");
+                }
+                else
+                {
+                    return Results.Ok(user);
+
+                }
 
             });
 
@@ -57,7 +65,7 @@ namespace Bangthatzon.APIs
                 userToUpdate.Address = user.Address;
                 userToUpdate.Image = user.Image;
                 db.SaveChanges();
-                return Results.NoContent();
+                return Results.Ok(userToUpdate);
 
             });
         }

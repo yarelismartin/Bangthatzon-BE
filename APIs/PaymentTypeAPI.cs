@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection.Metadata.Ecma335;
+using Bangthatzon.Models;
 
 
 namespace Bangthatzon.APIs
@@ -9,15 +10,17 @@ namespace Bangthatzon.APIs
     {
         public static void Map(WebApplication app)
         {
-            //Get payment type // checkout drop down
-            app.Map("/api/payment-types", (BangthatzonDbContext db) =>
+            //Get payment type by userId // checkout drop down
+            app.MapGet("/api/users/{userId}/payment-types", (BangthatzonDbContext db, int userId) =>
             {
-                var allPaymentTypes = db.PaymentTypes.ToList();
-                if (allPaymentTypes == null)
+                var usersPaymentTypes = db.PaymentTypes
+                .Where(p => p.UserId == userId)
+                .ToList();
+                if (!usersPaymentTypes.Any())
                 {
                     return Results.NotFound();
                 }
-                return Results.Ok(allPaymentTypes);
+                return Results.Ok(usersPaymentTypes);
             });
         }
     }

@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using System.Runtime.CompilerServices;
+using Microsoft.AspNetCore.Mvc;
+
 
 namespace Bangthatzon.APIs
 {
@@ -11,8 +13,10 @@ namespace Bangthatzon.APIs
         {
             //Get open order by userId, if order == null then create order
             //used when you click on the cart
-            app.MapGet("/api/users/{userId}/orders/open", (BangthatzonDbContext db, int userId) =>
+            app.MapGet("/api/users/{userId}/orders", (BangthatzonDbContext db, int userId, [FromQuery] string status) =>
             {
+                if(status == "open")
+                {
                 Order openOrder = db.Orders
                 .Include(o => o.Products)
                 .ThenInclude(p => p.Seller)
@@ -28,7 +32,16 @@ namespace Bangthatzon.APIs
                     return Results.Ok(newOrder);
                 }
                 else
+                    { 
+                    
                     return Results.Ok(openOrder);
+                    }
+
+                }
+                else
+                {
+                    return Results.BadRequest("Invalid status parameter");
+                }
             });
 
             //Patch order / updtate payment type, openorder, and date purchased
@@ -37,7 +50,7 @@ namespace Bangthatzon.APIs
                  Order orderToPlace = db.Orders.SingleOrDefault(o => o.Id == orderId);
                  if (orderToPlace == null)
                  {
-                     return Results.BadRequest("Order not found.");
+                     return Results.NotFound("Order not found.");
                  }
                  orderToPlace.PaymentTypeId = placedOrder.PaymentTypeId;
                  orderToPlace.OpenOrder = false;
